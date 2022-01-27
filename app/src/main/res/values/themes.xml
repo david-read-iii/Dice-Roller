@@ -6,6 +6,13 @@
         <item name="colorPrimaryDark">@color/blue_700</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <item name="toolbarStyle">@style/ToolbarStyle</item>
+    </style>
+
+    <!-- Toolbar style. -->
+    <style name="ToolbarStyle" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">?attr/colorPrimary</item>
+        <item name="titleTextColor">?attr/colorOnPrimary</item>
     </style>
 
 </resources>
