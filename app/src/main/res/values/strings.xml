@@ -1,9 +1,20 @@
 <resources>
+
+    <!-- App name. -->
     <string name="app_name">Dice Roller</string>
+
+    <!-- Action bar labels. -->
     <string name="action_roll">Roll</string>
     <string name="action_one">One</string>
     <string name="action_two">Two</string>
     <string name="action_three">Three</string>
     <string name="action_stop">Stop</string>
-    <string name="dice_one">1</string>
+
+    <!-- Sum label. -->
+    <string name="sum_label">Sum: %1$d</string>
+
+    <!-- Snackbar messages. -->
+    <string name="win_message">You won :)</string>
+    <string name="lose_message">You lose :(</string>
+
 </resources>

@@ -6,33 +6,37 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
+    android:padding="@dimen/activity_padding"
     tools:context=".MainActivity">
 
     <ImageView
-        android:id="@+id/dice1"
+        android:id="@+id/dice_1"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:contentDescription="@string/dice_one"
         android:src="@drawable/dice_1"
         app:tint="@color/red_900" />
 
     <ImageView
-        android:id="@+id/dice2"
+        android:id="@+id/dice_2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:contentDescription="@string/dice_one"
         android:src="@drawable/dice_1"
         app:tint="@color/red_900" />
 
     <ImageView
-        android:id="@+id/dice3"
+        android:id="@+id/dice_3"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:contentDescription="@string/dice_one"
         android:src="@drawable/dice_1"
         app:tint="@color/red_900" />
+
+    <TextView
+        android:id="@+id/sum_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="@string/sum_label" />
 
 </LinearLayout>
