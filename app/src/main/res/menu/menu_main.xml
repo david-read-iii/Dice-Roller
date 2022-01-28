@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_roll_length"
+        android:icon="@drawable/timer"
+        android:title="@string/action_roll_length"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_stop"
         android:icon="@drawable/stop"
         android:title="@string/action_stop"

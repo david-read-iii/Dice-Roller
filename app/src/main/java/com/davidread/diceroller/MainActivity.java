@@ -21,7 +21,7 @@ import com.google.android.material.snackbar.Snackbar;
  * Controls to change the number of dice, to roll the dice, and stop rolling the dice are in this
  * activity's action bar.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements RollLengthDialogFragment.OnRollLengthSelectedListener {
 
     /**
      * Int constant representing the maximum number of dice allowed to be shown on screen.
@@ -63,6 +63,11 @@ public class MainActivity extends AppCompatActivity {
      * {@link TextView} to hold the sum in the user interface.
      */
     private TextView sumTextView;
+
+    /**
+     * Long representing how long {@link #mTimer} should loop.
+     */
+    private long mTimerLength = 2000;
 
     /**
      * Callback method invoked when the activity is created. It initializes member variables and
@@ -151,7 +156,25 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
 
+        // When "Roll Length" is selected, show a dialog picker for roll length.
+        else if (item.getItemId() == R.id.action_roll_length) {
+            RollLengthDialogFragment dialog = new RollLengthDialogFragment();
+            dialog.show(getSupportFragmentManager(), "rollLengthDialog");
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Callback method invoked when a length is selected by a {@link RollLengthDialogFragment}. It
+     * simply assigns the selected length to {@link #mTimer}.
+     *
+     * @param which Int representing which length was selected by {@link RollLengthDialogFragment}.
+     */
+    @Override
+    public void onRollLengthClick(int which) {
+        mTimerLength = 1000 * (which + 1);
     }
 
     /**
@@ -189,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Initialize mTimer to call roll() on all Dice objects to display a dice roll animation.
-        mTimer = new CountDownTimer(2000, 100) {
+        mTimer = new CountDownTimer(mTimerLength, 100) {
             public void onTick(long millisUntilFinished) {
                 for (int i = 0; i < mVisibleDice; i++) {
                     mDice[i].roll();

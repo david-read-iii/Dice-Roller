@@ -4,6 +4,7 @@
     <string name="app_name">Dice Roller</string>
 
     <!-- Action bar labels. -->
+    <string name="action_roll_length">Roll Length</string>
     <string name="action_roll">Roll</string>
     <string name="action_one">One</string>
     <string name="action_two">Two</string>
@@ -16,5 +17,13 @@
     <!-- Snackbar messages. -->
     <string name="win_message">You won :)</string>
     <string name="lose_message">You lose :(</string>
+
+    <!-- Dialog strings. -->
+    <string name="pick_roll_length">Roll length?</string>
+    <string-array name="length_array">
+        <item>Short</item>
+        <item>Medium</item>
+        <item>Long</item>
+    </string-array>
 
 </resources>
