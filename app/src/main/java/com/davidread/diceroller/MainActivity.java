@@ -3,6 +3,7 @@ package com.davidread.diceroller;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -70,6 +71,11 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     private long mTimerLength = 2000;
 
     /**
+     * Int representing which die is currently displaying a {@link ContextMenu}.
+     */
+    private int mCurrentDie;
+
+    /**
      * Callback method invoked when the activity is created. It initializes member variables and
      * initializes the user interface.
      */
@@ -84,11 +90,15 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
             mDice[i] = new Dice(i + 1);
         }
 
-        // Initialize mDiceImageViews array.
+        // Initialize mDiceImageViews array and register context menus for each one.
         mDiceImageViews = new ImageView[MAX_DICE];
         mDiceImageViews[0] = findViewById(R.id.dice_1);
         mDiceImageViews[1] = findViewById(R.id.dice_2);
         mDiceImageViews[2] = findViewById(R.id.dice_3);
+        for (int i = 0; i < mDiceImageViews.length; i++) {
+            registerForContextMenu(mDiceImageViews[i]);
+            mDiceImageViews[i].setTag(i);
+        }
 
         // Set mVisibleDice to MAX_DICE since all dice are initially visible.
         mVisibleDice = MAX_DICE;
@@ -108,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
      */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.appbar_menu_main, menu);
         mMenu = menu;
         return super.onCreateOptionsMenu(menu);
     }
@@ -164,6 +174,53 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Callback method invoked when a context menu is built in this activity. It updates
+     * {@link #mCurrentDie} and inflates a context menu.
+     *
+     * @param menu     The context menu being built.
+     * @param v        The view for which the context menu is being built.
+     * @param menuInfo Extra information about the item for which the context menu should be shown.
+     */
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        mCurrentDie = (int) v.getTag();
+        getMenuInflater().inflate(R.menu.context_menu_main, menu);
+    }
+
+    /**
+     * Callback method invoked when an item in a context menu is selected in this activity.
+     *
+     * @param item The context menu item being selected.
+     * @return False to allow normal context menu processing to proceed. True to consume it here.
+     */
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+
+        // When "Add one" is selected, add one to the appropriate die and update the UI.
+        if (item.getItemId() == R.id.add_one) {
+            mDice[mCurrentDie].addOne();
+            updateUI();
+            return true;
+        }
+
+        // When "Subtract one" is selected, subtract one from the appropriate die and update the UI.
+        else if (item.getItemId() == R.id.subtract_one) {
+            mDice[mCurrentDie].subtractOne();
+            updateUI();
+            return true;
+        }
+
+        // When "Roll" is selected, roll all dice.
+        else if (item.getItemId() == R.id.roll) {
+            rollDice();
+            return true;
+        }
+
+        return super.onContextItemSelected(item);
     }
 
     /**
