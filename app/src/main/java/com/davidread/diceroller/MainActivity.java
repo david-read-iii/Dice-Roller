@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.ContextMenu;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -15,6 +16,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.GestureDetectorCompat;
 
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
@@ -78,16 +80,10 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     private int mCurrentDie;
 
     /**
-     * Int representing the x-position where the user initially placed their finger on an
-     * {@link MotionEvent#ACTION_DOWN} event.
+     * Array of {@link GestureDetectorCompat} that define what each {@link #mDiceImageViews}
+     * element should do in response to touch gestures.
      */
-    private int mInitialX;
-
-    /**
-     * Int representing the y-position where the user initially placed their finger on an
-     * {@link MotionEvent#ACTION_DOWN} event.
-     */
-    private int mInitialY;
+    private GestureDetectorCompat[] mDetectors;
 
     /**
      * Callback method invoked when the activity is created. It initializes member variables and
@@ -111,52 +107,48 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         mDiceImageViews[1] = findViewById(R.id.dice_2);
         mDiceImageViews[2] = findViewById(R.id.dice_3);
 
-        /* Register the first mDiceImageViews element with an OnTouchListener that responds to
-         * touch gestures over the view. */
-        mDiceImageViews[0].setOnTouchListener((v, event) -> {
-            int action = event.getAction();
-            switch (action) {
+        for (int i = 0; i < mDiceImageViews.length; i++) {
+            int innerI = i;
 
-                /* Initialize mInitialX and mInitialY whenever the user places their finger down on
-                 * the view. */
-                case MotionEvent.ACTION_DOWN:
-                    mInitialX = (int) event.getX();
-                    mInitialY = (int) event.getY();
-                    return true;
+            // Register mDiceImageViews elements for context menus.
+            registerForContextMenu(mDiceImageViews[innerI]);
+            mDiceImageViews[innerI].setTag(innerI);
 
-                // Check for certain conditions when the user moves their finger across the view.
-                case MotionEvent.ACTION_MOVE:
-                    int x = (int) event.getX();
-                    int y = (int) event.getY();
+            /* Register mDiceImageViews elements for OnTouchListeners. Each listener passes each
+             * touch event to the appropriate mDetectors element. */
+            mDiceImageViews[innerI].setOnTouchListener((v, event) -> {
+                mDetectors[innerI].onTouchEvent(event);
+                return true;
+            });
+        }
 
-                    /* Either add one or subtract one from the die if the user moves their finger
-                     * 200px to the left or right from mInitialX. */
-                    if (Math.abs(x - mInitialX) >= 200) {
-                        if (x > mInitialX) {
-                            mDice[0].addOne();
-                        } else {
-                            mDice[0].subtractOne();
-                        }
-                        updateUI();
-                        mInitialX = x;
-                    }
+        // Initialize mDetectors for each element in mDiceImageViews.
+        mDetectors = new GestureDetectorCompat[mDiceImageViews.length];
+        for (int i = 0; i < mDetectors.length; i++) {
+            int innerI = i;
+            mDetectors[i] = new GestureDetectorCompat(this, new GestureDetector.SimpleOnGestureListener() {
 
-                    /* Roll all the dice if the user moves their finger 200px above or below
-                     * mInitialY. */
-                    if (Math.abs(y - mInitialY) >= 200) {
-                        rollDice();
-                        mInitialY = y;
-                    }
+                // Add one to the die if a double tap is detected on the view.
+                @Override
+                public boolean onDoubleTap(MotionEvent e) {
+                    mDice[innerI].addOne();
+                    updateUI();
+                    return super.onDoubleTap(e);
+                }
 
-                    return true;
-            }
-            return true;
-        });
+                // Open a context menu if a long press is detected on the view.
+                @Override
+                public void onLongPress(MotionEvent motionEvent) {
+                    openContextMenu(mDiceImageViews[innerI]);
+                }
 
-        // Register the other mDiceImageViews elements for context menus.
-        for (int i = 1; i < mDiceImageViews.length; i++) {
-            registerForContextMenu(mDiceImageViews[i]);
-            mDiceImageViews[i].setTag(i);
+                // Roll all dice if a fling is detected on the view.
+                @Override
+                public boolean onFling(MotionEvent motionEvent, MotionEvent motionEvent1, float v, float v1) {
+                    rollDice();
+                    return false;
+                }
+            });
         }
 
         // Set mVisibleDice to MAX_DICE since all dice are initially visible.
