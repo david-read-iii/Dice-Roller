@@ -139,6 +139,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
                 @Override
                 public boolean onDoubleTap(MotionEvent e) {
                     mDice[innerI].addOne();
+                    calculateSum();
                     updateUI();
                     return super.onDoubleTap(e);
                 }
@@ -157,6 +158,9 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
                 }
             });
         }
+
+        // Initialize mSum.
+        calculateSum();
 
         // Initialize sum TextView.
         mSumTextView = findViewById(R.id.sum_text_view);
@@ -190,6 +194,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         // When "One" is selected, only show one die on screen.
         if (item.getItemId() == R.id.action_one) {
             changeDiceVisibility(1);
+            calculateSum();
             updateUI();
             return true;
         }
@@ -197,6 +202,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         // When "Two" is selected, only show two dice on screen.
         else if (item.getItemId() == R.id.action_two) {
             changeDiceVisibility(2);
+            calculateSum();
             updateUI();
             return true;
         }
@@ -204,6 +210,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         // When "Three" is selected, only show three dice on screen.
         else if (item.getItemId() == R.id.action_three) {
             changeDiceVisibility(3);
+            calculateSum();
             updateUI();
             return true;
         }
@@ -212,6 +219,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         else if (item.getItemId() == R.id.action_stop) {
             mTimer.cancel();
             item.setVisible(false);
+            mMenu.findItem(R.id.action_roll).setVisible(true);
             return true;
         }
 
@@ -259,6 +267,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         // When "Add one" is selected, add one to the appropriate die and update the UI.
         if (item.getItemId() == R.id.action_add_one) {
             mDice[mCurrentDie].addOne();
+            calculateSum();
             updateUI();
             return true;
         }
@@ -266,6 +275,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         // When "Subtract one" is selected, subtract one from the appropriate die and update the UI.
         else if (item.getItemId() == R.id.action_subtract_one) {
             mDice[mCurrentDie].subtractOne();
+            calculateSum();
             updateUI();
             return true;
         }
@@ -318,23 +328,31 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
      */
     private void rollDie(int which) {
 
-        // Show "Stop" action bar button.
+        // Show "Stop" and hide "Roll" action bar buttons.
         mMenu.findItem(R.id.action_stop).setVisible(true);
+        mMenu.findItem(R.id.action_roll).setVisible(false);
 
         // Stop mTimer if it is already running.
         if (mTimer != null) {
             mTimer.cancel();
         }
 
-        // Initialize mTimer to call roll() on the appropriate Dice object to display a dice roll animation.
+        // Initialize mTimer to call roll() on all mDice elements repeatedly.
         mTimer = new CountDownTimer(mTimerLength, 100) {
+
+            /* A few times a second, call roll() on the appropriate mDice element, calculate the
+             * sum, and update the user interface. */
             public void onTick(long millisUntilFinished) {
                 mDice[which].roll();
+                calculateSum();
                 updateUI();
             }
 
+            /* When mTimer is finished, hide "Stop" and show "Roll" action bar buttons, and check
+             * for winning and losing conditions. */
             public void onFinish() {
                 mMenu.findItem(R.id.action_stop).setVisible(false);
+                mMenu.findItem(R.id.action_roll).setVisible(true);
                 checkForWinConditions();
                 checkForLoseConditions();
             }
@@ -346,25 +364,33 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
      */
     private void rollDice() {
 
-        // Show "Stop" action bar button.
+        // Show "Stop" and hide "Roll" action bar buttons.
         mMenu.findItem(R.id.action_stop).setVisible(true);
+        mMenu.findItem(R.id.action_roll).setVisible(false);
 
         // Stop mTimer if it is already running.
         if (mTimer != null) {
             mTimer.cancel();
         }
 
-        // Initialize mTimer to call roll() on all Dice objects to display a dice roll animation.
+        // Initialize mTimer to call roll() on all mDice elements repeatedly.
         mTimer = new CountDownTimer(mTimerLength, 100) {
+
+            /* A few times a second, call roll() on all mDice elements, calculate the sum, and
+             * update the user interface. */
             public void onTick(long millisUntilFinished) {
                 for (int i = 0; i < mVisibleDice; i++) {
                     mDice[i].roll();
                 }
+                calculateSum();
                 updateUI();
             }
 
+            /* When mTimer is finished, hide "Stop" and show "Roll" action bar buttons, and check
+             * for winning and losing conditions. */
             public void onFinish() {
                 mMenu.findItem(R.id.action_stop).setVisible(false);
+                mMenu.findItem(R.id.action_roll).setVisible(true);
                 checkForWinConditions();
                 checkForLoseConditions();
             }
@@ -372,30 +398,31 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     }
 
     /**
-     * Updates the user of interface of this activity to match the logic of {@link #mDice}.
+     * Calculate the sum of the values of {@link #mDice} that are currently visible on screen. This
+     * value is put in {@link #mSum}.
+     */
+    private void calculateSum() {
+        mSum = 0;
+        for (int i = 0; i < mVisibleDice; i++) {
+            mSum += mDice[i].getNumber();
+        }
+    }
+
+    /**
+     * Updates the user interface of this activity to match the logic of {@link #mDice} and
+     * {@link #mSum}.
      */
     private void updateUI() {
 
-        // Display only the number of dice visible.
+        /* Update mDiceImageViews elements to have image drawables and descriptions that match their
+         * corresponding models in mDice. */
         for (int i = 0; i < mVisibleDice; i++) {
             Drawable diceDrawable = ContextCompat.getDrawable(this, mDice[i].getImageId());
             mDiceImageViews[i].setImageDrawable(diceDrawable);
             mDiceImageViews[i].setContentDescription(Integer.toString(mDice[i].getNumber()));
         }
 
-        // Display the sum.
-        mSum = 0;
-        switch (mVisibleDice) {
-            case 1:
-                mSum = mDice[0].getNumber();
-                break;
-            case 2:
-                mSum = mDice[0].getNumber() + mDice[1].getNumber();
-                break;
-            case 3:
-                mSum = mDice[0].getNumber() + mDice[1].getNumber() + mDice[2].getNumber();
-                break;
-        }
+        // Update mSumTextView to match its mSum model.
         mSumTextView.setText(getString(R.string.sum_label, mSum));
     }
 
