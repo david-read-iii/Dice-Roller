@@ -36,6 +36,23 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     public static final int MAX_DICE = 3;
 
     /**
+     * {@link String} constant for identifying the {@link #mVisibleDice} state in {@link Bundle}
+     * objects.
+     */
+    public static final String VISIBLE_DICE_STATE_EXTRA = "visible_dice_state";
+
+    /**
+     * {@link String} constant for identifying the {@link #mDice} state in {@link Bundle} objects.
+     */
+    public static final String DICE_STATE_EXTRA = "dice_state";
+
+    /**
+     * {@link String} constant for identifying the {@link #mTimerLength} state in {@link Bundle}
+     * objects.
+     */
+    public static final String TIMER_LENGTH_STATE_EXTRA = "timer_length_state";
+
+    /**
      * Int representing the number of dice visible on screen.
      */
     private int mVisibleDice;
@@ -99,13 +116,22 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // The maximum number of die allowed on screen are initially visible.
-        mVisibleDice = MAX_DICE;
-
         // Initialize mDice array.
         mDice = new Dice[MAX_DICE];
-        for (int i = 0; i < MAX_DICE; i++) {
-            mDice[i] = new Dice(i + 1);
+        if (savedInstanceState == null) {
+            for (int i = 0; i < MAX_DICE; i++) {
+                mDice[i] = new Dice(i + 1);
+            }
+        } else {
+            // Initialize mDice array from saved state.
+            String mDiceState = savedInstanceState.getString(DICE_STATE_EXTRA);
+            for (int i = 0; i < MAX_DICE; i++) {
+                if (i < mDiceState.length()) {
+                    mDice[i] = new Dice(Integer.parseInt(mDiceState.substring(i, i + 1)));
+                } else {
+                    mDice[i] = new Dice(1);
+                }
+            }
         }
 
         // Initialize mDiceImageViews array.
@@ -159,14 +185,52 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
             });
         }
 
+        // Initialize number of dice initially visible on screen.
+        if (savedInstanceState == null) {
+            mVisibleDice = MAX_DICE;
+        } else {
+            changeDiceVisibility(savedInstanceState.getInt(VISIBLE_DICE_STATE_EXTRA));
+        }
+
         // Initialize mSum.
         calculateSum();
 
         // Initialize sum TextView.
         mSumTextView = findViewById(R.id.sum_text_view);
 
+        // Initialize mTimerLength.
+        if (savedInstanceState == null) {
+            mTimerLength = 2000;
+        } else {
+            mTimerLength = savedInstanceState.getLong(TIMER_LENGTH_STATE_EXTRA);
+        }
+
         // Initialize the user interface.
         updateUI();
+    }
+
+    /**
+     * Callback method invoked before a configuration change may occur. It simply saves the state
+     * of {@link #mVisibleDice}, {@link #mDice}, and {@link #mTimerLength}.
+     *
+     * @param outState {@link Bundle} holding the state to save.
+     */
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        // Save mVisibleDice value.
+        outState.putInt(VISIBLE_DICE_STATE_EXTRA, mVisibleDice);
+
+        // Save mDice values.
+        StringBuilder mDiceStateBuilder = new StringBuilder();
+        for (int i = 0; i < MAX_DICE; i++) {
+            mDiceStateBuilder.append(mDice[i].getNumber());
+        }
+        outState.putString(DICE_STATE_EXTRA, mDiceStateBuilder.toString());
+
+        // Save mTimerLength value.
+        outState.putLong(TIMER_LENGTH_STATE_EXTRA, mTimerLength);
     }
 
     /**
