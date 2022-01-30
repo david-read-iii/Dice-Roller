@@ -22,9 +22,11 @@ import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 
 /**
- * {@link MainActivity} represents a user interface with three dice that may be rolled by the user.
+ * {@link MainActivity} represents a user interface with dice that may be rolled by the user.
  * Controls to change the number of dice, to roll the dice, and stop rolling the dice are in this
- * activity's action bar.
+ * activity's action bar. Each die may be long pressed to present a context menu of options for
+ * that die. Each die may be double tapped to increment their value by one. Flinging the screen
+ * rolls all dice.
  */
 public class MainActivity extends AppCompatActivity implements RollLengthDialogFragment.OnRollLengthSelectedListener {
 
@@ -44,46 +46,48 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     private Dice[] mDice;
 
     /**
-     * Array of {@link ImageView} that hold the dice image drawables in the user interface.
+     * Array of {@link ImageView} that display the values of {@link #mDice} using image drawables
+     * in the user interface.
      */
     private ImageView[] mDiceImageViews;
 
     /**
-     * Global reference to this activity's {@link Menu}.
+     * Array of {@link GestureDetectorCompat} that define how each {@link #mDiceImageViews}
+     * view should respond to touch gestures.
      */
-    private Menu mMenu;
-
-    /**
-     * {@link CountDownTimer} used to re-roll die a few times a second to give a dice roll
-     * animation.
-     */
-    private CountDownTimer mTimer;
+    private GestureDetectorCompat[] mDetectors;
 
     /**
      * Int representing the sum of the values of the dice visible on screen.
      */
-    private int sum;
+    private int mSum;
 
     /**
-     * {@link TextView} to hold the sum in the user interface.
+     * {@link TextView} to display {@link #mSum} in the user interface.
      */
-    private TextView sumTextView;
+    private TextView mSumTextView;
 
     /**
-     * Long representing how long {@link #mTimer} should loop.
+     * {@link CountDownTimer} used to call {@link Dice#roll()} a few times a second to give a nice
+     * dice roll animation.
+     */
+    private CountDownTimer mTimer;
+
+    /**
+     * Long indicating how many milliseconds {@link #mTimer} should loop before stopping.
      */
     private long mTimerLength = 2000;
 
     /**
-     * Int representing which die is currently displaying a {@link ContextMenu}.
+     * Global reference to this activity's appbar {@link Menu} so it may be manipulated dynamically.
      */
-    private int mCurrentDie;
+    private Menu mMenu;
 
     /**
-     * Array of {@link GestureDetectorCompat} that define what each {@link #mDiceImageViews}
-     * element should do in response to touch gestures.
+     * Int indicating which die has called
+     * {@link #onCreateContextMenu(ContextMenu, View, ContextMenu.ContextMenuInfo)} last.
      */
-    private GestureDetectorCompat[] mDetectors;
+    private int mCurrentDie;
 
     /**
      * Callback method invoked when the activity is created. It initializes member variables and
@@ -94,6 +98,9 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // The maximum number of die allowed on screen are initially visible.
+        mVisibleDice = MAX_DICE;
 
         // Initialize mDice array.
         mDice = new Dice[MAX_DICE];
@@ -110,25 +117,25 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         for (int i = 0; i < mDiceImageViews.length; i++) {
             int innerI = i;
 
-            // Register mDiceImageViews elements for context menus.
+            // Register mDiceImageViews elements for context menus in this activity.
             registerForContextMenu(mDiceImageViews[innerI]);
             mDiceImageViews[innerI].setTag(innerI);
 
-            /* Register mDiceImageViews elements for OnTouchListeners. Each listener passes each
-             * touch event to the appropriate mDetectors element. */
+            /* Register mDiceImageViews elements for OnTouchListener objects. Each listener passes
+             * all touch events to the appropriate mDetector element. */
             mDiceImageViews[innerI].setOnTouchListener((v, event) -> {
                 mDetectors[innerI].onTouchEvent(event);
                 return true;
             });
         }
 
-        // Initialize mDetectors for each element in mDiceImageViews.
+        // Initialize mDetectors elements for each mDiceImageViews element.
         mDetectors = new GestureDetectorCompat[mDiceImageViews.length];
         for (int i = 0; i < mDetectors.length; i++) {
             int innerI = i;
             mDetectors[i] = new GestureDetectorCompat(this, new GestureDetector.SimpleOnGestureListener() {
 
-                // Add one to the die if a double tap is detected on the view.
+                // Add one to this Dice object if a double tap is detected on the view.
                 @Override
                 public boolean onDoubleTap(MotionEvent e) {
                     mDice[innerI].addOne();
@@ -136,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
                     return super.onDoubleTap(e);
                 }
 
-                // Open a context menu if a long press is detected on the view.
+                // Open a context menu for this Dice object if a long press is detected on the view.
                 @Override
                 public void onLongPress(MotionEvent motionEvent) {
                     openContextMenu(mDiceImageViews[innerI]);
@@ -151,13 +158,10 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
             });
         }
 
-        // Set mVisibleDice to MAX_DICE since all dice are initially visible.
-        mVisibleDice = MAX_DICE;
-
         // Initialize sum TextView.
-        sumTextView = findViewById(R.id.sum_text_view);
+        mSumTextView = findViewById(R.id.sum_text_view);
 
-        // Call updateUI() to initialize user interface.
+        // Initialize the user interface.
         updateUI();
     }
 
@@ -239,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         mCurrentDie = (int) v.getTag();
+        menu.setHeaderTitle(getString(R.string.die_options_dialog_label, mCurrentDie + 1));
         getMenuInflater().inflate(R.menu.context_menu_main, menu);
     }
 
@@ -252,21 +257,21 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
     public boolean onContextItemSelected(MenuItem item) {
 
         // When "Add one" is selected, add one to the appropriate die and update the UI.
-        if (item.getItemId() == R.id.add_one) {
+        if (item.getItemId() == R.id.action_add_one) {
             mDice[mCurrentDie].addOne();
             updateUI();
             return true;
         }
 
         // When "Subtract one" is selected, subtract one from the appropriate die and update the UI.
-        else if (item.getItemId() == R.id.subtract_one) {
+        else if (item.getItemId() == R.id.action_subtract_one) {
             mDice[mCurrentDie].subtractOne();
             updateUI();
             return true;
         }
 
         // When "Roll" is selected, roll all dice.
-        else if (item.getItemId() == R.id.roll) {
+        else if (item.getItemId() == R.id.action_roll_single) {
             rollDie(mCurrentDie);
             return true;
         }
@@ -379,42 +384,42 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         }
 
         // Display the sum.
-        sum = 0;
+        mSum = 0;
         switch (mVisibleDice) {
             case 1:
-                sum = mDice[0].getNumber();
+                mSum = mDice[0].getNumber();
                 break;
             case 2:
-                sum = mDice[0].getNumber() + mDice[1].getNumber();
+                mSum = mDice[0].getNumber() + mDice[1].getNumber();
                 break;
             case 3:
-                sum = mDice[0].getNumber() + mDice[1].getNumber() + mDice[2].getNumber();
+                mSum = mDice[0].getNumber() + mDice[1].getNumber() + mDice[2].getNumber();
                 break;
         }
-        sumTextView.setText(getString(R.string.sum_label, sum));
+        mSumTextView.setText(getString(R.string.sum_label, mSum));
     }
 
     /**
-     * Checks {@link #sum} for winning conditions. If one is detected, a {@link Snackbar} is popped
+     * Checks {@link #mSum} for winning conditions. If one is detected, a {@link Snackbar} is popped
      * on screen.
      */
     private void checkForWinConditions() {
-        if ((mVisibleDice == 2) && (sum == 7 || sum == 11)) {
-            Snackbar.make(sumTextView, R.string.win_message, BaseTransientBottomBar.LENGTH_SHORT).show();
-        } else if ((mVisibleDice == 3) && (sum % 7 == 0 || sum % 11 == 0)) {
-            Snackbar.make(sumTextView, R.string.win_message, BaseTransientBottomBar.LENGTH_SHORT).show();
+        if ((mVisibleDice == 2) && (mSum == 7 || mSum == 11)) {
+            Snackbar.make(mSumTextView, R.string.win_message, BaseTransientBottomBar.LENGTH_SHORT).show();
+        } else if ((mVisibleDice == 3) && (mSum % 7 == 0 || mSum % 11 == 0)) {
+            Snackbar.make(mSumTextView, R.string.win_message, BaseTransientBottomBar.LENGTH_SHORT).show();
         }
     }
 
     /**
-     * Checks {@link #sum} for losing conditions. If one is detected, a {@link Snackbar} is popped
+     * Checks {@link #mSum} for losing conditions. If one is detected, a {@link Snackbar} is popped
      * on screen.
      */
     private void checkForLoseConditions() {
-        if ((mVisibleDice == 2) && (sum == 2 || sum == 12)) {
-            Snackbar.make(sumTextView, R.string.lose_message, BaseTransientBottomBar.LENGTH_SHORT).show();
-        } else if ((mVisibleDice == 3) && (sum == 18 || sum == 3)) {
-            Snackbar.make(sumTextView, R.string.lose_message, BaseTransientBottomBar.LENGTH_SHORT).show();
+        if ((mVisibleDice == 2) && (mSum == 2 || mSum == 12)) {
+            Snackbar.make(mSumTextView, R.string.lose_message, BaseTransientBottomBar.LENGTH_SHORT).show();
+        } else if ((mVisibleDice == 3) && (mSum == 18 || mSum == 3)) {
+            Snackbar.make(mSumTextView, R.string.lose_message, BaseTransientBottomBar.LENGTH_SHORT).show();
         }
     }
 }

@@ -2,15 +2,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/add_one"
-        android:title="@string/add_one" />
+        android:id="@+id/action_add_one"
+        android:title="@string/add_one_option_label" />
 
     <item
-        android:id="@+id/subtract_one"
-        android:title="@string/subtract_one" />
+        android:id="@+id/action_subtract_one"
+        android:title="@string/subtract_one_option_label" />
 
     <item
-        android:id="@+id/roll"
-        android:title="@string/roll" />
+        android:id="@+id/action_roll_single"
+        android:title="@string/roll_option_label" />
 
 </menu>

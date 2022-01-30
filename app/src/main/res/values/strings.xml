@@ -12,23 +12,24 @@
     <string name="action_stop">Stop</string>
 
     <!-- Sum label. -->
-    <string name="sum_label">Sum: %1$d</string>
+    <string name="sum_label">Sum %1$d</string>
 
     <!-- Snackbar messages. -->
     <string name="win_message">You won :)</string>
     <string name="lose_message">You lose :(</string>
 
-    <!-- Dialog strings. -->
-    <string name="pick_roll_length">Roll length?</string>
-    <string-array name="length_array">
+    <!-- Roll length dialog strings. -->
+    <string name="roll_length_dialog_title">Choose a roll length</string>
+    <string-array name="roll_length_option_labels">
         <item>Short</item>
         <item>Medium</item>
         <item>Long</item>
     </string-array>
 
-    <!-- Context menu strings. -->
-    <string name="add_one">Add one</string>
-    <string name="subtract_one">Subtract one</string>
-    <string name="roll">Roll</string>
+    <!-- Die options context menu strings. -->
+    <string name="die_options_dialog_label">Choose an option for die %1$d</string>
+    <string name="add_one_option_label">Add one</string>
+    <string name="subtract_one_option_label">Subtract one</string>
+    <string name="roll_option_label">Roll</string>
 
 </resources>

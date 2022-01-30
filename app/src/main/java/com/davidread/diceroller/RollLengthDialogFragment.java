@@ -50,8 +50,8 @@ public class RollLengthDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
-        builder.setTitle(R.string.pick_roll_length);
-        builder.setItems(R.array.length_array, (dialog, which) -> {
+        builder.setTitle(R.string.roll_length_dialog_title);
+        builder.setItems(R.array.roll_length_option_labels, (dialog, which) -> {
             mListener.onRollLengthClick(which);
         });
         return builder.create();
