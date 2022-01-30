@@ -267,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
 
         // When "Roll" is selected, roll all dice.
         else if (item.getItemId() == R.id.roll) {
-            rollDice();
+            rollDie(mCurrentDie);
             return true;
         }
 
@@ -304,6 +304,36 @@ public class MainActivity extends AppCompatActivity implements RollLengthDialogF
         for (int i = numVisible; i < MAX_DICE; i++) {
             mDiceImageViews[i].setVisibility(View.GONE);
         }
+    }
+
+    /**
+     * Rolls the appropriate die on screen with a nice animation.
+     *
+     * @param which Which {@link Dice} object to call {@link Dice#roll()} on.
+     */
+    private void rollDie(int which) {
+
+        // Show "Stop" action bar button.
+        mMenu.findItem(R.id.action_stop).setVisible(true);
+
+        // Stop mTimer if it is already running.
+        if (mTimer != null) {
+            mTimer.cancel();
+        }
+
+        // Initialize mTimer to call roll() on the appropriate Dice object to display a dice roll animation.
+        mTimer = new CountDownTimer(mTimerLength, 100) {
+            public void onTick(long millisUntilFinished) {
+                mDice[which].roll();
+                updateUI();
+            }
+
+            public void onFinish() {
+                mMenu.findItem(R.id.action_stop).setVisible(false);
+                checkForWinConditions();
+                checkForLoseConditions();
+            }
+        }.start();
     }
 
     /**
